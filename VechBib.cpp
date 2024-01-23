@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <exception>
 
 using namespace std;
 
@@ -12,10 +13,25 @@ vector<string> mNames = {"Yamaha     ", "Kawasaki   ", "Suzuki     "};
 vector<string> tNames = {"Mercedes   ", "Iveco      ", "Scania     ", "Bell Trucks"};
 vector<string> AllNames = {"Volvo      ", "BMW        ", "Toyota     ", "Opel       ", "Audi       ", "Hyundai    ", "Yamaha     ", "Kawasaki   ", "Suzuki     ", "Mercedes   ", "Iveco      ", "Scania     ", "Bell Trucks"};
 
+class Except : public std::exception
+{
+	public:
+		const char* what() const noexcept override
+		{
+			return "Defected Car was tried to be put in database";
+		}
+};
+
 class Vechicle
 {
 	public:
-		Vechicle(): mass(0), price(0), brand("unknown"), sits(0), YearOfProd(0) {}
+		Vechicle(): mass(0), price(0), brand("unknown"), sits(0), YearOfProd(0), defect(0)
+		{
+			if(rand() % 26 == 3)
+			{
+				throw Except();
+			}
+		}
 
 		virtual double getMass() const = 0;
 		virtual int getSits() const = 0;
@@ -24,28 +40,30 @@ class Vechicle
 		virtual int getYear() const = 0;
 		virtual void getInfo() const = 0;
 		virtual double getMaxV() const = 0;
+		virtual bool getDefect() const = 0;
 
-		~Vechicle() {}
+		virtual ~Vechicle() {}
 	protected:
 		double mass;
 		double price;
 		std::string brand;
 		int sits;
 		int YearOfProd;
+		bool defect;
 };
 
 class Car : public Vechicle
 {
 	public:
 		Car() {cos = new int[5];}
-		Car(double m, int s, int y, std::string& name)
+		Car(double m, int s, int y, std::string& name): Car()
 		{
 			mass = m;
 			sits = s;
 			YearOfProd = y;
 			brand = name;
 			price = mass*mass*(1.0/static_cast<double>(2024-YearOfProd));
-			cos = new int[5];
+
 		}
 		double getMass() const override
 		{
@@ -75,8 +93,12 @@ class Car : public Vechicle
 		{
 			return maxVC;
 		}
+		bool getDefect() const override
+		{
+			return defect;
+		}
 		static double maxVC;
-		~Car() {delete cos;}
+		~Car() override {delete[] cos;}
 	private:
 		int *cos;
 };
@@ -85,7 +107,7 @@ class Motor : public Vechicle
 {
 	public:
 		Motor() {cos = new int[5];}
-		Motor(double m, int s, int y, std::string& name)
+		Motor(double m, int s, int y, std::string& name): Motor()
 		{
 			mass = m;
 			sits = s;
@@ -93,6 +115,10 @@ class Motor : public Vechicle
 			brand = name;
 			price = mass*mass*(1.0/static_cast<double>(2024-YearOfProd));
 			cos = new int[5];
+			if(rand() % 15 == 1)
+			{
+				defect = 1;
+			}
 		}
 		double getMass() const override
 		{
@@ -122,9 +148,13 @@ class Motor : public Vechicle
 		{
 			return maxVM;
 		}
+		bool getDefect() const override
+		{
+			return defect;
+		}
 
 		static double maxVM;
-		~Motor() {delete cos;}
+		~Motor() override {delete[] cos;}
 	private:
 		int *cos;
 };
@@ -133,7 +163,7 @@ class Truck : public Vechicle
 {
 	public:
 		Truck() {cos = new int[5];}
-		Truck(double m, int s, int y, std::string& name)
+		Truck(double m, int s, int y, std::string& name): Truck()
 		{
 			mass = m;
 			sits = s;
@@ -141,6 +171,10 @@ class Truck : public Vechicle
 			brand = name;
 			price = mass*mass*(1.0/static_cast<double>(2024-YearOfProd));
 			cos = new int[5];
+			if(rand() % 15 == 1)
+			{
+				defect = 1;
+			}
 		}
 		double getMass() const override
 		{
@@ -170,8 +204,13 @@ class Truck : public Vechicle
 		{
 			return maxVT;
 		}
+		bool getDefect() const override
+		{
+			return defect;
+		}
+
 		static double maxVT;
-		~Truck() {delete cos;}
+		~Truck() override {delete[] cos;}
 	private:
 		int *cos;
 };
@@ -185,24 +224,54 @@ class Fabric
 		}
 		std::unique_ptr<Vechicle> doCar(double m, int s, int y, std::string& name)
 		{
-			/*Vechicle* NewCar;
-			NewCar = new Car(m, s, y, name);*/
-			std::unique_ptr<Vechicle> NewCar = std::make_unique<Car>(m, s, y, name);
-			return NewCar;
+			while(1)
+			{
+				try
+				{
+					/*Vechicle* NewCar;
+					NewCar = new Car(m, s, y, name);*/
+					std::unique_ptr<Vechicle> NewCar = std::make_unique<Car>(m, s, y, name);
+					return NewCar;
+				}
+				catch(const Except& ex)
+				{
+					cerr << ex.what() << endl;
+				}
+			}
 		}
 
 		std::unique_ptr<Vechicle> doMotor(double m, int s, int y, std::string& name)
 		{
-			/*Vechicle* NewMotor = new Motor(m, s, y, name);*/
-			std::unique_ptr<Vechicle> NewMotor = std::make_unique<Motor>(m, s, y, name);
-			return NewMotor;
+			while(1)
+			{
+				try
+				{
+					/*Vechicle* NewMotor = new Motor(m, s, y, name);*/
+					std::unique_ptr<Vechicle> NewMotor = std::make_unique<Motor>(m, s, y, name);
+					return NewMotor;
+				}
+				catch(const Except& ex)
+				{
+					cerr << ex.what() << endl;
+				}
+			}
 		}
 
 		std::unique_ptr<Vechicle> doTruck(double m, int s, int y, std::string& name)
 		{
-			//Vechicle* NewTruck = new Truck(m, s, y, name);
-			std::unique_ptr<Vechicle> NewTruck = std::make_unique<Truck>(m, s, y, name);
-			return NewTruck;
+			while(1)
+			{
+				try
+				{
+					//Vechicle* NewTruck = new Truck(m, s, y, name);
+					std::unique_ptr<Vechicle> NewTruck = std::make_unique<Truck>(m, s, y, name);
+					return NewTruck;
+				}
+				catch(const Except& ex)
+				{
+					cerr << ex.what() << endl;
+				}
+			}
 		}
 
 		std::unique_ptr<Vechicle> doRand()
@@ -288,6 +357,16 @@ class Garage
 				This[i];
 			}
 		}
+		void PrintRecordsDefected(Garage &This)
+		{
+			cout << "No." << "   |  " << "Brand      " << "   |   " << "Year" << "   |   " << "Sits" << "   |   " << "Mass" << "   |   " << "Max V" << "   |   " << "Price" << endl;
+			cout << "---" << "-------" << "-----------" << "-------" << "----" << "-------" << "----" << "-------" << "----" << "-------" << "-----" << "-------" << "----------------" << endl;
+			for(int i = 0; i < recordDefect.size(); i++)
+			{
+				cout << i+1 << ".    |  ";
+				recordDefect[i]->getInfo();
+			}
+		}
 		/*void PrintSpecial(Garage &This)
 		{
 			cout << "No." << "   |  " << "Brand      " << "   |   " << "Year" << "   |   " << "Sits" << "   |   " << "Mass" << "   |   " << "Max V" << "   |   " << "Price" << endl;
@@ -342,7 +421,7 @@ class Garage
 	private:
 		std::unique_ptr<Fabric> Manufacture;
 		vector<std::unique_ptr<Vechicle>> record;
-		vector<std::unique_ptr<Vechicle>> recordSel;
+		vector<std::unique_ptr<Vechicle>> recordDefect;
 };
 
 //template<typename condit>
@@ -386,9 +465,6 @@ int main()
 	srand(time(NULL));
 	Garage Station1;
 
-	vector<std::unique_ptr<Vechicle>> record;
-	vector<std::unique_ptr<Vechicle>> recordSel;
-
 	for(int i = 0; i < 997; i++)
 	{
 		Station1.InsertRand();
@@ -396,10 +472,9 @@ int main()
 
 	Station1.PrintRecords(Station1);
 
-
-	while(1)
-	{
-		Station1.PrintRecordsSorted(Station1);
-	}
+	//while(1)
+	//{
+	//	Station1.PrintRecordsSorted(Station1);
+	//}
 
 }
